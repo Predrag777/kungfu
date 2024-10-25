@@ -27,3 +27,22 @@ class Network(nn.Module):
         #Output
         self.fc2a=torch.nn.Linear(128, action_size)#FullConnected Action
         self.fc2s=torch.nn.Linear(128, 1)#FullConncected State
+
+    def forward(self, state):
+        x=self.conv1(state)
+        x=F.relu(x)
+        x=self.conv2(x)
+        x=F.relu(x)
+        x=self.conv3(x)
+        x = F.relu(x)
+
+        x=self.flatten(x)
+
+        x=self.fc1(x)
+
+        action_value=self.fc2a(x)
+        state_value=self.fc2s(x)
+        
+        return action_value, state_value
+
+
