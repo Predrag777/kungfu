@@ -54,6 +54,12 @@ number_environments=10
 
 
 
+class Agent():
+    def __init__(self, action_size):
+        self.device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.action_size=action_size
+        self.network=Network(action_size).to(self.device)
+        self.optimizer=torch.optim.Adam(self.network.parameters(), lr=learning_rate)
 
 
 
