@@ -61,5 +61,10 @@ class Agent():
         self.network=Network(action_size).to(self.device)
         self.optimizer=torch.optim.Adam(self.network.parameters(), lr=learning_rate)
 
-
-
+    def act(self, state):
+        if state.ndim==3:
+            state=[state]#Make sure it is in the batch format
+        state=torch.tensor(state, dtype=torch.float32, device=self.device)
+        action_values,_=self.network.forward(state)
+        policy=F.softmax(action_values, dim=-1) #Convert action values into probabilities
+        return np.array([np.random.choice(len(p), p=p) for p in policy.detach().cpu().numpy()])
