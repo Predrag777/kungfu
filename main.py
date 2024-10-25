@@ -14,7 +14,7 @@ import gymnasium as gym
 from gymnasium import ObservationWrapper
 from gymnasium.spaces import Box
 
-from DEEP_Q_LEARNING.main import learning_rate, discount_factor
+from DEEP_Q_LEARNING.main import learning_rate, discount_factor, action, number_actions
 
 
 class Network(nn.Module):
@@ -97,7 +97,24 @@ class Agent():
         critic_loss=F.mse_loss(target_state_value.detach(), state_value)
 
         total_loss=actor_loss+critic_loss
-        
+
         self.optimizer.zero_grad()
-        total_loss.backward()       
+        total_loss.backward()
         self.optimizer.step()
+
+agent=Agent(number_actions)
+
+
+def evaluate(agent, env, n_episodes=1):
+    episodes_rewards=[]
+    for _ in range(0,n_episodes):
+        state, _=env.reset()
+        total_reward=0
+        while True:
+            action=agent.act(state)
+            state, reward, done, info, _=env.step(action[0])
+            total_reward+=reward
+            if done:
+                break
+            episodes_rewards.append(total_reward)
+    return episodes_rewards
