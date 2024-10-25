@@ -8,6 +8,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.multiprocessing as mp
 import torch.distributions as distributions
+from fontTools.ttLib.tables.S__i_l_f import pass_attrs_fsm
 from torch.distributions import Categorical
 import gymnasium as gym
 from gymnasium import ObservationWrapper
@@ -68,3 +69,35 @@ class Agent():
         action_values,_=self.network.forward(state)
         policy=F.softmax(action_values, dim=-1) #Convert action values into probabilities
         return np.array([np.random.choice(len(p), p=p) for p in policy.detach().cpu().numpy()])
+
+    def step(self,state, action, reward, next_state, done):
+        batch_size=state.shape[0]
+
+        state=torch.tensor(state, dtype=torch.float32, device=self.device)
+        next_state = torch.tensor(next_state, dtype=torch.float32, device=self.device)
+        action=torch.tensor(action, dtype=torch.float32, device=self.device)
+        reward = torch.tensor(reward, dtype=torch.float32, device=self.device)
+        done = torch.tensor(done, dtype=torch.float32, device=self.device).to(dtype=torch.float32)
+        action_values, state_value=self.network(state)
+        _, next_state_value=self.network(next_state)
+
+        target_state_value=reward+discount_factor*next_state_value*(1-done)
+
+        advantage=target_state_value-state_value #standard formula for the advantages
+
+        probs=F.softmax(action_values, dim=-1)
+        logprobs=F.log_softmax(action_values, dim=-1)
+
+        entropy=-torch.sum(probs*logprobs, axis=-1)
+
+        batch_idx=np.arange(batch_size)
+        logp_actions=logprobs[batch_idx, action]
+
+        actor_loss=-(logp_actions*advantage.detach()).mean()-0.001*entropy.mean()
+        critic_loss=F.mse_loss(target_state_value.detach(), state_value)
+
+        total_loss=actor_loss+critic_loss
+        
+        self.optimizer.zero_grad()
+        total_loss.backward()       
+        self.optimizer.step()
