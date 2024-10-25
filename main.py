@@ -182,3 +182,28 @@ class EnvBatch:
         for env in self.envs:
             _states.append(env.reset()[0])
         return np.array(_states)
+
+    def step(self, actions):
+        next_states,rewards,dones,infos,_=map(np.array, zip(*[env.step(a) for env, a in zip(self.envs, actions)]))
+        for i in range(len(self.envs)):
+            if(dones[i]):
+                next_states[i]=self.envs[i].reset()[0] #Ako je zavrseno, naredno stanje je pocetno stanje environmenta
+        return next_states, rewards, dones, infos
+
+
+import tqdm
+
+
+env_batch=EnvBatch(n_envs=number_environments)
+batch_states=env_batch.reset()
+
+with tqdm.trange(0, 3001) as progress_bar:
+    for i in progress_bar:
+        batch_actions=agent.act(batch_states)   #Play actions
+        batch_next_states, batch_rewards, batch_dones, _=env_batch.step(batch_actions)
+        batch_rewards*=0.01  #Reduce rewards to staabilize training
+        agent.step(batch_states, batch_actions, batch_rewards, batch_next_states, batch_dones)
+        batch_states=batch_next_states
+        if i%1000==0:
+            print("Average reward: ",np.mean(evaluate(agent, env, n_episodes=10)))
+        
