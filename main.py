@@ -13,6 +13,8 @@ import gymnasium as gym
 from gymnasium import ObservationWrapper
 from gymnasium.spaces import Box
 
+from DEEP_Q_LEARNING.main import learning_rate, discount_factor
+
 
 class Network(nn.Module):
     def __init__(self, action_size):
@@ -42,7 +44,16 @@ class Network(nn.Module):
 
         action_value=self.fc2a(x)
         state_value=self.fc2s(x)
-        
+
         return action_value, state_value
+
+
+learning_rate=1e-4
+discount_factor=0.99
+number_environments=10
+
+
+
+
 
 
